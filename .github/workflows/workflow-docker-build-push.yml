@@ -1,179 +1,179 @@
 on:
-    workflow_call: 
-      inputs:
-        
-        runs-on:
-          type: string
-          description: 'Runs on'
-  
-        build-docker-context-path:
-          required: true
-          type: string
-          description: 'Docker context path'
-  
-        build-docker-file-path:
-          required: true
-          type: string
-          description: 'Dockerfile path'
-  
-        docker-server:
-          required: true
-          type: string
-          description: 'Docker registry server'
-  
-        docker-username:
-          required: true
-          type: string
-          description: 'Docker username for login to docker registry'
-  
-        docker-repository:
-          required: true
-          type: string
-          description: 'Docker repository name'
-  
-        docker-tag-prefix:
-          required: false
-          default: ''
-          type: string
-          description: 'Docker tag prefix'
-  
-        docker-build-only:
-          required: false
-          default: false
-          type: boolean
-          description: 'Docker build only'
-  
-      secrets:
-        docker-password:
-          required: true
-          description: 'Docker password for login to docker registry'
-  
-      outputs:
-        GIT_COMMIT_ID:
-          value: ${{ jobs.build_and_push.outputs.GIT_COMMIT_ID }}
-        GIT_COMMIT_MSG:
-          value: ${{ jobs.build_and_push.outputs.GIT_COMMIT_MSG }}
-        GIT_COMITTER:
-          value: ${{ jobs.build_and_push.outputs.GIT_COMITTER }}
-        GIT_COMMIT_DATE:
-          value: ${{ jobs.build_and_push.outputs.GIT_COMMIT_DATE }}
-        DOCKER_REPO:
-          value: ${{ jobs.build_and_push.outputs.DOCKER_REPO }}
-        DOCKER_TAG:
-          value: ${{ jobs.build_and_push.outputs.DOCKER_TAG }}
-        REV_DATE:
-          value: ${{ jobs.build_and_push.outputs.REV_DATE }}
-        REV_UNIQUE:
-          value: ${{ jobs.build_and_push.outputs.REV_UNIQUE }}
-        
-  
-  jobs:
-    build_and_push:
-      runs-on: ${{ inputs.runs-on }}
-      outputs:
-        GIT_COMMIT_ID: ${{ steps.git-variables.outputs.GIT_COMMIT_ID }}
-        GIT_COMMIT_MSG: ${{ steps.git-variables.outputs.GIT_COMMIT_MSG }}
-        GIT_COMITTER: ${{ steps.git-variables.outputs.GIT_COMITTER }}
-        GIT_COMMIT_DATE: ${{ steps.git-variables.outputs.GIT_COMMIT_DATE }}
-        DOCKER_REPO: ${{ steps.git-variables.outputs.DOCKER_REPO }}
-        DOCKER_TAG: ${{ steps.git-variables.outputs.DOCKER_TAG }}
-        REV_DATE: ${{ steps.common-vars.outputs.rev-date }}
-        REV_UNIQUE: ${{ steps.common-vars.outputs.rev-unique }}
-      steps:
-        - uses: devops/.github/actions/common@master
-          id: common-vars
-  
-        - uses: devops/.github/actions/git-checkout@master
-          with:
-            gitToken: ${{ secrets.GITHUB_TOKEN }}
-  
-        - shell: bash
-          name: display 
-          run: |
-            set -euo pipefail
-  
-            echo "rev-date=${{ steps.common-vars.outputs.rev-date }}"
-            echo "rev-unique=${{ steps.common-vars.outputs.rev-unique }}"
-  
-            tree .
-  
-        - name: git variables of app
-          id: git-variables
-          shell: bash
-          run: |
-            [[ -z "${{ inputs.build-docker-context-path }}" ]] && { echo "build-docker-context-path is empty"; exit 1; }
-            [[ -z "${{ inputs.build-docker-file-path }}" ]] && { echo "build-docker-file-path is empty"; exit 1; }
-            [[ -z "${{ inputs.docker-repository }}" ]] && { echo "docker-repository is empty"; exit 1; }
-  
-            set -euo pipefail
-  
-            CTX="${{ inputs.build-docker-context-path }}"
-            [[ -d "$CTX" ]] || { echo "Context path '$CTX' does not exist"; exit 1; }
-            FILE="${{ inputs.build-docker-file-path }}"
-            [[ -f "$FILE" ]] || { echo "File path '$FILE' does not exist"; exit 1; }
-  
-            GIT_COMMIT_ID=`git log -n 1 --format="%h" -- $CTX $FILE`
-            echo "GIT_COMMIT_ID=$GIT_COMMIT_ID" >> $GITHUB_ENV
-            echo "GIT_COMMIT_ID=$GIT_COMMIT_ID" >> $GITHUB_OUTPUT
-            echo "GIT_COMMIT_ID=$GIT_COMMIT_ID" 
-  
-            GIT_COMMIT_MSG=`git log -n 1 --format="%s (%h)" -- $CTX $FILE`
-            echo "GIT_COMMIT_MSG=$GIT_COMMIT_MSG" >> $GITHUB_ENV
-            echo "GIT_COMMIT_MSG=$GIT_COMMIT_MSG" >> $GITHUB_OUTPUT
-            echo "GIT_COMMIT_MSG=$GIT_COMMIT_MSG"
-  
-            GIT_COMITTER=`git log -n 1 --format="%cn" -- $CTX $FILE`
-            echo "GIT_COMITTER=$GIT_COMITTER" >> $GITHUB_ENV
-            echo "GIT_COMITTER=$GIT_COMITTER" >> $GITHUB_OUTPUT
-            echo "GIT_COMITTER=$GIT_COMITTER"
-  
-            GIT_COMMIT_DATE=`git log -n 1 --format="%ci" -- $CTX $FILE`
-            echo "GIT_COMMIT_DATE=$GIT_COMMIT_DATE" >> $GITHUB_ENV
-            echo "GIT_COMMIT_DATE=$GIT_COMMIT_DATE" >> $GITHUB_OUTPUT
-            echo "GIT_COMMIT_DATE=$GIT_COMMIT_DATE"
-  
-            DOCKER_TAG="${GIT_COMMIT_ID}-${{ steps.common-vars.outputs.rev-unique }}"
-            if [[ -n "${{ inputs.docker-tag-prefix }}" ]]; then
-              DOCKER_TAG="${{ inputs.docker-tag-prefix }}-${DOCKER_TAG}"
-            fi
-            echo "DOCKER_TAG=$DOCKER_TAG" >> $GITHUB_ENV
-            echo "DOCKER_TAG=$DOCKER_TAG" >> $GITHUB_OUTPUT
-            echo "DOCKER_TAG=$DOCKER_TAG"
-  
-            DOCKER_REPO="${{ inputs.docker-server }}/${{ inputs.docker-repository }}"
-            echo "DOCKER_REPO=$DOCKER_REPO" >> $GITHUB_ENV
-            echo "DOCKER_REPO=$DOCKER_REPO" >> $GITHUB_OUTPUT
-            echo "DOCKER_REPO=$DOCKER_REPO"
-  
-          working-directory: app
-  
-        - name: docker build init
-          uses: docker/setup-buildx-action@v3
-  
-        - name: docker login
-          uses: docker/login-action@v3
-          with:
-            registry: ${{ inputs.docker-server }}
-            username: ${{ inputs.docker-username }}
-            password: ${{ secrets.docker-password }}
-  
-        - name: docker build & push
-          uses: docker/build-push-action@v5 
-          id: docker-build
-          with:
-            context: app/${{ inputs.build-docker-context-path }}
-            file: app/${{ inputs.build-docker-file-path }}
-            push: ${{ !inputs.docker-build-only }}
-            labels: |
-              GIT_COMMIT_ID=${{ steps.git-variables.outputs.GIT_COMMIT_ID }}
-              GIT_COMMIT_MSG=${{ steps.git-variables.outputs.GIT_COMMIT_MSG }}
-              GIT_COMITTER=${{ steps.git-variables.outputs.GIT_COMITTER }}
-              GIT_COMMIT_DATE=${{ steps.git-variables.outputs.GIT_COMMIT_DATE }}
-              GITHUB_ACTOR=${{ github.actor }}
-              GITHUB_REPOSITORY=${{ github.repository }}
-              GITHUB_SHA=${{ github.sha }}
-              GITHUB_REF=${{ github.ref }}
-              GITHUB_RUN_ID=${{ github.run_id }}
-              GITHUB_RUN_NUMBER=${{ github.run_number }}
-            tags: |
-              ${{ steps.git-variables.outputs.DOCKER_REPO }}:${{ steps.git-variables.outputs.DOCKER_TAG }}
+  workflow_call: 
+    inputs:
+      
+      runs-on:
+        type: string
+        description: 'Runs on'
+
+      build-docker-context-path:
+        required: true
+        type: string
+        description: 'Docker context path'
+
+      build-docker-file-path:
+        required: true
+        type: string
+        description: 'Dockerfile path'
+
+      docker-server:
+        required: true
+        type: string
+        description: 'Docker registry server'
+
+      docker-username:
+        required: true
+        type: string
+        description: 'Docker username for login to docker registry'
+
+      docker-repository:
+        required: true
+        type: string
+        description: 'Docker repository name'
+
+      docker-tag-prefix:
+        required: false
+        default: ''
+        type: string
+        description: 'Docker tag prefix'
+
+      docker-build-only:
+        required: false
+        default: false
+        type: boolean
+        description: 'Docker build only'
+
+    secrets:
+      docker-password:
+        required: true
+        description: 'Docker password for login to docker registry'
+
+    outputs:
+      GIT_COMMIT_ID:
+        value: ${{ jobs.build_and_push.outputs.GIT_COMMIT_ID }}
+      GIT_COMMIT_MSG:
+        value: ${{ jobs.build_and_push.outputs.GIT_COMMIT_MSG }}
+      GIT_COMITTER:
+        value: ${{ jobs.build_and_push.outputs.GIT_COMITTER }}
+      GIT_COMMIT_DATE:
+        value: ${{ jobs.build_and_push.outputs.GIT_COMMIT_DATE }}
+      DOCKER_REPO:
+        value: ${{ jobs.build_and_push.outputs.DOCKER_REPO }}
+      DOCKER_TAG:
+        value: ${{ jobs.build_and_push.outputs.DOCKER_TAG }}
+      REV_DATE:
+        value: ${{ jobs.build_and_push.outputs.REV_DATE }}
+      REV_UNIQUE:
+        value: ${{ jobs.build_and_push.outputs.REV_UNIQUE }}
+      
+
+jobs:
+  build_and_push:
+    runs-on: ${{ inputs.runs-on }}
+    outputs:
+      GIT_COMMIT_ID: ${{ steps.git-variables.outputs.GIT_COMMIT_ID }}
+      GIT_COMMIT_MSG: ${{ steps.git-variables.outputs.GIT_COMMIT_MSG }}
+      GIT_COMITTER: ${{ steps.git-variables.outputs.GIT_COMITTER }}
+      GIT_COMMIT_DATE: ${{ steps.git-variables.outputs.GIT_COMMIT_DATE }}
+      DOCKER_REPO: ${{ steps.git-variables.outputs.DOCKER_REPO }}
+      DOCKER_TAG: ${{ steps.git-variables.outputs.DOCKER_TAG }}
+      REV_DATE: ${{ steps.common-vars.outputs.rev-date }}
+      REV_UNIQUE: ${{ steps.common-vars.outputs.rev-unique }}
+    steps:
+      - uses: devops/.github/actions/common@master
+        id: common-vars
+
+      - uses: devops/.github/actions/git-checkout@master
+        with:
+          gitToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - shell: bash
+        name: display 
+        run: |
+          set -euo pipefail
+
+          echo "rev-date=${{ steps.common-vars.outputs.rev-date }}"
+          echo "rev-unique=${{ steps.common-vars.outputs.rev-unique }}"
+
+          tree .
+
+      - name: git variables of app
+        id: git-variables
+        shell: bash
+        run: |
+          [[ -z "${{ inputs.build-docker-context-path }}" ]] && { echo "build-docker-context-path is empty"; exit 1; }
+          [[ -z "${{ inputs.build-docker-file-path }}" ]] && { echo "build-docker-file-path is empty"; exit 1; }
+          [[ -z "${{ inputs.docker-repository }}" ]] && { echo "docker-repository is empty"; exit 1; }
+
+          set -euo pipefail
+
+          CTX="${{ inputs.build-docker-context-path }}"
+          [[ -d "$CTX" ]] || { echo "Context path '$CTX' does not exist"; exit 1; }
+          FILE="${{ inputs.build-docker-file-path }}"
+          [[ -f "$FILE" ]] || { echo "File path '$FILE' does not exist"; exit 1; }
+
+          GIT_COMMIT_ID=`git log -n 1 --format="%h" -- $CTX $FILE`
+          echo "GIT_COMMIT_ID=$GIT_COMMIT_ID" >> $GITHUB_ENV
+          echo "GIT_COMMIT_ID=$GIT_COMMIT_ID" >> $GITHUB_OUTPUT
+          echo "GIT_COMMIT_ID=$GIT_COMMIT_ID" 
+
+          GIT_COMMIT_MSG=`git log -n 1 --format="%s (%h)" -- $CTX $FILE`
+          echo "GIT_COMMIT_MSG=$GIT_COMMIT_MSG" >> $GITHUB_ENV
+          echo "GIT_COMMIT_MSG=$GIT_COMMIT_MSG" >> $GITHUB_OUTPUT
+          echo "GIT_COMMIT_MSG=$GIT_COMMIT_MSG"
+
+          GIT_COMITTER=`git log -n 1 --format="%cn" -- $CTX $FILE`
+          echo "GIT_COMITTER=$GIT_COMITTER" >> $GITHUB_ENV
+          echo "GIT_COMITTER=$GIT_COMITTER" >> $GITHUB_OUTPUT
+          echo "GIT_COMITTER=$GIT_COMITTER"
+
+          GIT_COMMIT_DATE=`git log -n 1 --format="%ci" -- $CTX $FILE`
+          echo "GIT_COMMIT_DATE=$GIT_COMMIT_DATE" >> $GITHUB_ENV
+          echo "GIT_COMMIT_DATE=$GIT_COMMIT_DATE" >> $GITHUB_OUTPUT
+          echo "GIT_COMMIT_DATE=$GIT_COMMIT_DATE"
+
+          DOCKER_TAG="${GIT_COMMIT_ID}-${{ steps.common-vars.outputs.rev-unique }}"
+          if [[ -n "${{ inputs.docker-tag-prefix }}" ]]; then
+            DOCKER_TAG="${{ inputs.docker-tag-prefix }}-${DOCKER_TAG}"
+          fi
+          echo "DOCKER_TAG=$DOCKER_TAG" >> $GITHUB_ENV
+          echo "DOCKER_TAG=$DOCKER_TAG" >> $GITHUB_OUTPUT
+          echo "DOCKER_TAG=$DOCKER_TAG"
+
+          DOCKER_REPO="${{ inputs.docker-server }}/${{ inputs.docker-repository }}"
+          echo "DOCKER_REPO=$DOCKER_REPO" >> $GITHUB_ENV
+          echo "DOCKER_REPO=$DOCKER_REPO" >> $GITHUB_OUTPUT
+          echo "DOCKER_REPO=$DOCKER_REPO"
+
+        working-directory: app
+
+      - name: docker build init
+        uses: docker/setup-buildx-action@v3
+
+      - name: docker login
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ inputs.docker-server }}
+          username: ${{ inputs.docker-username }}
+          password: ${{ secrets.docker-password }}
+
+      - name: docker build & push
+        uses: docker/build-push-action@v5 
+        id: docker-build
+        with:
+          context: app/${{ inputs.build-docker-context-path }}
+          file: app/${{ inputs.build-docker-file-path }}
+          push: ${{ !inputs.docker-build-only }}
+          labels: |
+            GIT_COMMIT_ID=${{ steps.git-variables.outputs.GIT_COMMIT_ID }}
+            GIT_COMMIT_MSG=${{ steps.git-variables.outputs.GIT_COMMIT_MSG }}
+            GIT_COMITTER=${{ steps.git-variables.outputs.GIT_COMITTER }}
+            GIT_COMMIT_DATE=${{ steps.git-variables.outputs.GIT_COMMIT_DATE }}
+            GITHUB_ACTOR=${{ github.actor }}
+            GITHUB_REPOSITORY=${{ github.repository }}
+            GITHUB_SHA=${{ github.sha }}
+            GITHUB_REF=${{ github.ref }}
+            GITHUB_RUN_ID=${{ github.run_id }}
+            GITHUB_RUN_NUMBER=${{ github.run_number }}
+          tags: |
+            ${{ steps.git-variables.outputs.DOCKER_REPO }}:${{ steps.git-variables.outputs.DOCKER_TAG }}
