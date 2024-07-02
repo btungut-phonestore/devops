@@ -81,7 +81,7 @@ jobs:
       - uses: btungut-phonestore/devops/.github/actions/common@master
         id: common-vars
 
-      - uses: devops/.github/actions/git-checkout@master
+      - uses: btungut-phonestore/devops/.github/actions/git-checkout@master
         with:
           gitToken: ${{ secrets.GITHUB_TOKEN }}
 
