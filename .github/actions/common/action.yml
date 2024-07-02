@@ -1,0 +1,48 @@
+name: common
+description: Common action
+
+outputs:
+  rev-date:
+    description: "Revision date"
+    value: ${{ steps.common-vars.outputs.rev-date }}
+  rev-unique:
+    description: "Revision unique"
+    value: ${{ steps.common-vars.outputs.rev-unique }}
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: install yq
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq &&\
+          chmod +x /usr/bin/yq
+
+        yq --version > /dev/null
+
+    # - name: install apt packages
+    #   shell: bash
+    #   run: |
+    #     set -euo pipefail
+
+    #     # sudo apt-get update
+    #     sudo apt-get install tree -y
+
+    - name: Generate and publish common vars
+      id: common-vars
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        REV_DATE=$(date +'%Y%m%d-%H%M%S')
+        echo "rev-date=$REV_DATE" >> $GITHUB_OUTPUT
+        echo "rev-date=$REV_DATE"
+
+        RUN_NUMBER=$(printf '%02d\n' "${{ github.run_number }}")
+        RUN_ATTEMPT=$(printf '%02d\n' "${{ github.run_attempt }}")
+        REV_UNIQUE="$RUN_NUMBER-r$RUN_ATTEMPT"
+        echo "rev-unique=$REV_UNIQUE" >> $GITHUB_OUTPUT
+        echo "rev-unique=$REV_UNIQUE"
