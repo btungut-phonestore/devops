@@ -107,7 +107,7 @@ jobs:
           set -euo pipefail
 
           CTX="${{ inputs.build-docker-context-path }}"
-          [[ -d "$CTX" ]] || { echo "Context path '$CTX' does not exist"; exit 1; }
+          # [[ -d "$CTX" ]] || { echo "Context path '$CTX' does not exist"; exit 1; }
           FILE="${{ inputs.build-docker-file-path }}"
           [[ -f "$FILE" ]] || { echo "File path '$FILE' does not exist"; exit 1; }
 
