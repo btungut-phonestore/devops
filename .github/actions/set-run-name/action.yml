@@ -2,9 +2,9 @@ name: set-run-name
 description: Set run name dynamically
 
 inputs:
-  # ghToken:
-  #   required: true
-  #   description: "GitHub token"
+  ghToken:
+    required: true
+    description: "GitHub token"
   new-name:
     required: true
     description: "New run name"
@@ -18,7 +18,7 @@ runs:
       env:
         GITHUB_RUN_ID: ${{ github.run_id }}
         GITHUB_REPOSITORY: ${{ github.repository }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.ghToken }}
         NEW_RUN_NAME: "${{ inputs.new-name }}"
       run: |
         curl -X PATCH \
