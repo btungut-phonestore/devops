@@ -5,12 +5,31 @@ inputs:
   gitToken:
     required: true
     description: "Git token"
+  checkoutGitOps:
+    required: false
+    default: "false"
+    description: "Checkout gitops repository"
+  gitOpsBranch:
+    required: false
+    default: "dev"
+    description: "Gitops branch"
 
 
 
 runs:
   using: "composite"
   steps:
+
+    - name: checkout gitops
+      if: ${{ inputs.checkoutGitOps == 'true' }}
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 100
+        repository: ${{ github.repository_owner }}/gitops
+        ref: ${{ inputs.gitOpsBranch }}
+        token: ${{ inputs.gitToken }}
+        persist-credentials: true
+        clean: true
 
     - name: checkout devops
       uses: actions/checkout@v4
@@ -28,7 +47,6 @@ runs:
         fetch-depth: 100
         clean: true
         token: ${{ inputs.gitToken }}
-        persist-credentials: true
         path: app
 
     - name: git options
