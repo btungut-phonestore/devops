@@ -52,7 +52,7 @@ runs:
         echo "rev-unique=$REV_UNIQUE" >> $GITHUB_OUTPUT
         echo "rev-unique=$REV_UNIQUE"
 
-        REV_NAME="${RUN_NUMBER}-r${RUN_ATTEMPT}"
+        REV_NAME="v${RUN_NUMBER}-r${RUN_ATTEMPT}"
         echo "rev-name=$REV_NAME" >> $GITHUB_OUTPUT
         echo "rev-name=$REV_NAME"
 
