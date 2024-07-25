@@ -104,22 +104,22 @@ jobs:
           FILE="${{ inputs.build-docker-file-path }}"
           [[ -f "$FILE" ]] || { echo "File path '$FILE' does not exist"; exit 1; }
 
-          GIT_COMMIT_ID=`git log -n 1 --format="%h" -- $CTX $FILE`
+          GIT_COMMIT_ID=`git log -n 1 --format="%h" -- $CTX $FILE ':!.*'`
           echo "GIT_COMMIT_ID=$GIT_COMMIT_ID" >> $GITHUB_ENV
           echo "GIT_COMMIT_ID=$GIT_COMMIT_ID" >> $GITHUB_OUTPUT
           echo "GIT_COMMIT_ID=$GIT_COMMIT_ID" 
 
-          GIT_COMMIT_MSG=`git log -n 1 --format="%s (%h)" -- $CTX $FILE`
+          GIT_COMMIT_MSG=`git log -n 1 --format="%s (%h)" -- $CTX $FILE ':!.*'`
           echo "GIT_COMMIT_MSG=$GIT_COMMIT_MSG" >> $GITHUB_ENV
           echo "GIT_COMMIT_MSG=$GIT_COMMIT_MSG" >> $GITHUB_OUTPUT
           echo "GIT_COMMIT_MSG=$GIT_COMMIT_MSG"
 
-          GIT_COMITTER=`git log -n 1 --format="%cn" -- $CTX $FILE`
+          GIT_COMITTER=`git log -n 1 --format="%cn" -- $CTX $FILE ':!.*'`
           echo "GIT_COMITTER=$GIT_COMITTER" >> $GITHUB_ENV
           echo "GIT_COMITTER=$GIT_COMITTER" >> $GITHUB_OUTPUT
           echo "GIT_COMITTER=$GIT_COMITTER"
 
-          GIT_COMMIT_DATE=`git log -n 1 --format="%ci" -- $CTX $FILE`
+          GIT_COMMIT_DATE=`git log -n 1 --format="%ci" -- $CTX $FILE ':!.*'`
           echo "GIT_COMMIT_DATE=$GIT_COMMIT_DATE" >> $GITHUB_ENV
           echo "GIT_COMMIT_DATE=$GIT_COMMIT_DATE" >> $GITHUB_OUTPUT
           echo "GIT_COMMIT_DATE=$GIT_COMMIT_DATE"
