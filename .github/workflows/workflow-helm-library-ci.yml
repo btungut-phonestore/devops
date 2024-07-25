@@ -89,6 +89,9 @@ jobs:
 
         working-directory: app
 
+      - uses: btungut-phonestore/devops/.github/actions/set-run-name@master
+        with:
+          new-name: "${{ steps.version-step.outputs.NEW_CHART_VERSION_BETA }}"
 
 
       - name: git variables of app

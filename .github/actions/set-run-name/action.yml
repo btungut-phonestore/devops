@@ -1,0 +1,29 @@
+name: set-run-name
+description: Set run name dynamically
+
+inputs:
+  # ghToken:
+  #   required: true
+  #   description: "GitHub token"
+  new-name:
+    required: true
+    description: "New run name"
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Set Run Name
+      shell: bash
+      env:
+        GITHUB_RUN_ID: ${{ github.run_id }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NEW_RUN_NAME: "${{ inputs.new-name }}"
+      run: |
+        curl -X PATCH \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Authorization: token $GITHUB_TOKEN" \
+          https://api.github.com/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID \
+          -d "{\"name\":\"$NEW_RUN_NAME\"}"
+        
