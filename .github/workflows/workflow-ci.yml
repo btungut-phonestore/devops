@@ -87,6 +87,12 @@ jobs:
   helm_upgrade:
     needs: build_and_push
     runs-on: ${{ inputs.runs-on }}
+    env:
+      DOCKER_REPO: ${{ needs.build_and_push.outputs.DOCKER_REPO }}
+      DOCKER_TAG: ${{ needs.build_and_push.outputs.DOCKER_TAG }}
+      GIT_COMMIT_ID: ${{ needs.build_and_push.outputs.GIT_COMMIT_ID }}
+      GIT_COMMIT_MSG: ${{ needs.build_and_push.outputs.GIT_COMMIT_MSG }}
+      GIT_COMITTER: ${{ needs.build_and_push.outputs.GIT_COMITTER }}
     steps: 
       - uses: btungut-phonestore/devops/.github/actions/common@master
         id: common-vars
@@ -101,6 +107,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
+          [ -z "${{ env.DOCKER_REPO }}" ] && { echo "DOCKER_REPO is not set"; exit 1; }
+          [ -z "${{ env.DOCKER_TAG }}" ] && { echo "DOCKER_TAG is not set"; exit 1; }
+          [ -z "${{ env.GIT_COMMIT_ID }}" ] && { echo "GIT_COMMIT_ID is not set"; exit 1; }
+          [ -z "${{ env.GIT_COMMIT_MSG }}" ] && { echo "GIT_COMMIT_MSG is not set"; exit 1; }
+          [ -z "${{ env.GIT_COMITTER }}" ] && { echo "GIT_COMITTER is not set"; exit 1; }
           
           CHART_DIR="${{ inputs.gitops-helm-chart-path }}"
           [ -d "${CHART_DIR}" ] || { echo "Directory ${CHART_DIR} does not exist"; exit 1; }
@@ -113,11 +125,11 @@ jobs:
           CHART_VERSION=`yq '.version' Chart.yaml`
           ARR=(${CHART_VERSION//./ })
           CURRENT_CHART_VERSION="${ARR[0]}.${ARR[1]}.${ARR[2]%%-*}-${{ steps.common-vars.outputs.rev-name }}"
-          ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".version" "${CURRENT_CHART_VERSION}" "${{ job.build_and_push.outputs.GIT_COMMIT_ID }}"
-          ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".appVersion" "${{ job.build_and_push.outputs.GIT_COMMIT_ID }} (${{ job.build_and_push.outputs.GIT_COMITTER }})"
-          ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".description" "${{ job.build_and_push.outputs.GIT_COMMIT_MSG }}"
-          ${{ github.workspace }}/devops/scripts/modify-yaml.sh values.yaml ".deployment.image.repository" "${{ job.build_and_push.outputs.DOCKER_REPO }}"
-          ${{ github.workspace }}/devops/scripts/modify-yaml.sh values.yaml ".deployment.image.tag" "${{ job.build_and_push.outputs.DOCKER_TAG }}"
+          ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".version" "${CURRENT_CHART_VERSION}" "${{ env.GIT_COMMIT_ID }}"
+          ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".appVersion" "${{ env.GIT_COMMIT_ID }} (${{ env.GIT_COMITTER }})"
+          ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".description" "${{ env.GIT_COMMIT_MSG }}"
+          ${{ github.workspace }}/devops/scripts/modify-yaml.sh values.yaml ".deployment.image.repository" "${{ env.DOCKER_REPO }}"
+          ${{ github.workspace }}/devops/scripts/modify-yaml.sh values.yaml ".deployment.image.tag" "${{ env.DOCKER_TAG }}"
 
           cat Chart.yaml
           echo "----------------"
