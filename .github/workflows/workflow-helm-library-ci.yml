@@ -1,0 +1,163 @@
+on:
+  workflow_call: 
+    inputs:
+      
+      runs-on:
+        required: true
+        type: string
+        description: 'Runs on'
+
+      library-chart-path:
+        required: true
+        type: string
+        description: 'Library chart path'
+
+      test-chart-path:
+        required: true
+        type: string
+        description: 'Test chart path'
+
+      docker-server:
+        required: true
+        type: string
+        description: 'Docker registry server'
+
+    secrets:
+      docker-username:
+        required: true
+        description: 'Docker username for login to docker registry'
+      docker-password:
+        required: true
+        description: 'Docker password for login to docker registry'
+
+    outputs:
+      GIT_COMMIT_ID:
+        value: ${{ jobs.build_and_push.outputs.GIT_COMMIT_ID }}
+      GIT_COMMIT_MSG:
+        value: ${{ jobs.build_and_push.outputs.GIT_COMMIT_MSG }}
+      GIT_COMITTER:
+        value: ${{ jobs.build_and_push.outputs.GIT_COMITTER }}
+      GIT_COMMIT_DATE:
+        value: ${{ jobs.build_and_push.outputs.GIT_COMMIT_DATE }}
+      REV_DATE:
+        value: ${{ jobs.build_and_push.outputs.REV_DATE }}
+      REV_UNIQUE:
+        value: ${{ jobs.build_and_push.outputs.REV_UNIQUE }}
+      
+
+jobs:
+  build_and_push:
+    runs-on: ${{ inputs.runs-on }}
+    outputs:
+      GIT_COMMIT_ID: ${{ steps.git-variables.outputs.GIT_COMMIT_ID }}
+      GIT_COMMIT_MSG: ${{ steps.git-variables.outputs.GIT_COMMIT_MSG }}
+      GIT_COMITTER: ${{ steps.git-variables.outputs.GIT_COMITTER }}
+      GIT_COMMIT_DATE: ${{ steps.git-variables.outputs.GIT_COMMIT_DATE }}
+      REV_DATE: ${{ steps.common-vars.outputs.rev-date }}
+      REV_UNIQUE: ${{ steps.common-vars.outputs.rev-unique }}
+    steps:
+      - uses: btungut-phonestore/devops/.github/actions/common@master
+        id: common-vars
+
+      - uses: btungut-phonestore/devops/.github/actions/git-checkout@master
+        with:
+          gitToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: prepare versions
+        shell: bash
+        id: version-step
+        run: |
+          set -euo pipefail
+
+          pushd ${{ inputs.library-chart-path }}
+          echo "PWD : $(pwd)"
+
+          CHART_NAME=`yq '.name' Chart.yaml`
+          echo "CHART_NAME=$CHART_NAME" >> $GITHUB_ENV
+          echo "CHART_NAME=$CHART_NAME" >> $GITHUB_OUTPUT
+          echo "CHART_NAME=$CHART_NAME"
+
+          CHART_VERSION=`yq '.version' Chart.yaml`
+          ARR=(${CHART_VERSION//./ })
+          CURRENT_CHART_VERSION="${ARR[0]}.${ARR[1]}.${ARR[2]}"
+          echo "Current chart version : $CURRENT_CHART_VERSION"
+
+          REV=$((${ARR[2]} + 1))
+          NEW_CHART_VERSION_STABLE="${ARR[0]}.${ARR[1]}.${REV}"
+          echo "NEW_CHART_VERSION_STABLE=$NEW_CHART_VERSION_STABLE" >> $GITHUB_ENV
+          echo "NEW_CHART_VERSION_STABLE=$NEW_CHART_VERSION_STABLE" >> $GITHUB_OUTPUT
+          echo "NEW_CHART_VERSION_STABLE=$NEW_CHART_VERSION_STABLE"
+
+          NEW_CHART_VERSION_BETA="${CURRENT_CHART_VERSION}-r$(Revision)"
+          echo "NEW_CHART_VERSION_BETA=$NEW_CHART_VERSION_BETA" >> $GITHUB_ENV
+          echo "NEW_CHART_VERSION_BETA=$NEW_CHART_VERSION_BETA" >> $GITHUB_OUTPUT
+          echo "NEW_CHART_VERSION_BETA=$NEW_CHART_VERSION_BETA"
+
+        working-directory: app
+
+
+
+      - name: git variables of app
+        id: git-variables
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          DIR_CHART="${{ inputs.library-chart-path }}"
+          [ -d $DIR_CHART ] || { echo "DIR_CHART (${DIR_CHART}) does not exist"; exit 1; }
+
+          DIR_TEST="${{ inputs.test-chart-path }}"
+          [ -d $DIR_TEST ] || { echo "DIR_TEST (${DIR_TEST}) does not exist"; exit 1; }
+
+          GIT_COMMIT_ID=`git log -n 1 --format="%h" -- $DIR_CHART $DIR_TEST`
+          echo "GIT_COMMIT_ID=$GIT_COMMIT_ID" >> $GITHUB_ENV
+          echo "GIT_COMMIT_ID=$GIT_COMMIT_ID" >> $GITHUB_OUTPUT
+          echo "GIT_COMMIT_ID=$GIT_COMMIT_ID" 
+
+          GIT_COMMIT_MSG=`git log -n 1 --format="%s (%h)" -- $DIR_CHART $DIR_TEST`
+          echo "GIT_COMMIT_MSG=$GIT_COMMIT_MSG" >> $GITHUB_ENV
+          echo "GIT_COMMIT_MSG=$GIT_COMMIT_MSG" >> $GITHUB_OUTPUT
+          echo "GIT_COMMIT_MSG=$GIT_COMMIT_MSG"
+
+          GIT_COMITTER=`git log -n 1 --format="%cn" -- $DIR_CHART $DIR_TEST`
+          echo "GIT_COMITTER=$GIT_COMITTER" >> $GITHUB_ENV
+          echo "GIT_COMITTER=$GIT_COMITTER" >> $GITHUB_OUTPUT
+          echo "GIT_COMITTER=$GIT_COMITTER"
+
+          GIT_COMMIT_DATE=`git log -n 1 --format="%ci" -- $DIR_CHART $DIR_TEST`
+          echo "GIT_COMMIT_DATE=$GIT_COMMIT_DATE" >> $GITHUB_ENV
+          echo "GIT_COMMIT_DATE=$GIT_COMMIT_DATE" >> $GITHUB_OUTPUT
+          echo "GIT_COMMIT_DATE=$GIT_COMMIT_DATE"
+
+        working-directory: app
+
+      # - name: docker build init
+      #   uses: docker/setup-buildx-action@v3
+
+      # - name: docker login
+      #   uses: docker/login-action@v3
+      #   with:
+      #     registry: ${{ inputs.docker-server }}
+      #     username: ${{ secrets.docker-username }}
+      #     password: ${{ secrets.docker-password }}
+
+      # - name: docker build & push
+      #   uses: docker/build-push-action@v5 
+      #   id: docker-build
+      #   with:
+      #     context: app/${{ inputs.build-docker-context-path }}
+      #     file: app/${{ inputs.build-docker-file-path }}
+      #     push: ${{ !inputs.docker-build-only }}
+      #     labels: |
+      #       GIT_COMMIT_ID=${{ steps.git-variables.outputs.GIT_COMMIT_ID }}
+      #       GIT_COMMIT_MSG=${{ steps.git-variables.outputs.GIT_COMMIT_MSG }}
+      #       GIT_COMITTER=${{ steps.git-variables.outputs.GIT_COMITTER }}
+      #       GIT_COMMIT_DATE=${{ steps.git-variables.outputs.GIT_COMMIT_DATE }}
+      #       GITHUB_ACTOR=${{ github.actor }}
+      #       GITHUB_REPOSITORY=${{ github.repository }}
+      #       GITHUB_SHA=${{ github.sha }}
+      #       GITHUB_REF=${{ github.ref }}
+      #       GITHUB_RUN_ID=${{ github.run_id }}
+      #       GITHUB_RUN_NUMBER=${{ github.run_number }}
+      #     tags: |
+      #       ${{ steps.git-variables.outputs.DOCKER_REPO }}:${{ steps.git-variables.outputs.DOCKER_TAG }}
