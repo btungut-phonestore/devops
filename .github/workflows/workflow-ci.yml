@@ -122,17 +122,47 @@ jobs:
           [ -f "values.yaml" ] || { echo "File values.yaml does not exist in $PWD"; exit 1; }
           [ -f "Chart.yaml" ] || { echo "File Chart.yaml does not exist in $PWD"; exit 1; }
 
+          CHART_NAME=`yq '.name' Chart.yaml`
+          echo "CHART_NAME=$CHART_NAME" >> $GITHUB_ENV
+
           CHART_VERSION=`yq '.version' Chart.yaml`
           ARR=(${CHART_VERSION//./ })
-          CURRENT_CHART_VERSION="${ARR[0]}.${ARR[1]}.${ARR[2]%%-*}-${{ steps.common-vars.outputs.rev-name }}"
-          ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".version" "${CURRENT_CHART_VERSION}" "${{ env.GIT_COMMIT_ID }}"
+          NEW_CHART_VERSION="${ARR[0]}.${ARR[1]}.${ARR[2]%%-*}-${{ steps.common-vars.outputs.rev-name }}"
+          echo "NEW_CHART_VERSION=$NEW_CHART_VERSION" >> $GITHUB_ENV
+          ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".version" "${NEW_CHART_VERSION}" "${{ env.GIT_COMMIT_ID }}"
           ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".appVersion" "${{ env.GIT_COMMIT_ID }} (${{ env.GIT_COMITTER }})"
           ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".description" "${{ env.GIT_COMMIT_MSG }}"
           ${{ github.workspace }}/devops/scripts/modify-yaml.sh values.yaml ".deployment.image.repository" "${{ env.DOCKER_REPO }}"
           ${{ github.workspace }}/devops/scripts/modify-yaml.sh values.yaml ".deployment.image.tag" "${{ env.DOCKER_TAG }}"
 
-          cat Chart.yaml
-          echo "----------------"
-          cat values.yaml
+        working-directory: gitops
 
+      - name: git commit and push
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TARGET_BRANCH="dev"
+          echo "TARGET_BRANCH=$TARGET_BRANCH"
+
+          RELEASE_BRANCH="release/${CHART_NAME}-${NEW_CHART_VERSION}"
+          echo "RELEASE_BRANCH=$RELEASE_BRANCH"
+
+          git checkout -B "${RELEASE_BRANCH}"
+          echo "git branch created (${RELEASE_BRANCH})"
+
+          git add -A
+          echo "git changes added"
+
+          git commit -m "Release ${CHART_NAME} ${NEW_CHART_VERSION}"
+          echo "git commit done"
+
+          git checkout "${TARGET_BRANCH}"
+          git pull origin "${TARGET_BRANCH}"
+          echo "git pull done"
+
+          git merge "${RELEASE_BRANCH}"
+          echo "git merge done"
+
+          git push origin "${TARGET_BRANCH}"
         working-directory: gitops

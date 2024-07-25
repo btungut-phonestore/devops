@@ -42,6 +42,28 @@ runs:
         clean: true
         path: devops
 
+    - name: git options
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        pushd devops
+        chmod +x scripts/*
+        popd
+
+        if [ -d "gitops" ]; then
+          pushd gitops
+          git fetch
+          git checkout ${{ inputs.gitOpsBranch }}
+          git pull origin ${{ inputs.gitOpsBranch }}
+          git config --global user.email "${{ inputs.gitOpsBranch }}@gitops.local"
+          git config --global user.name "github-actions[${{ inputs.gitOpsBranch }}]"
+          popd
+        fi
+
+
+
+
     - name: checkout app
       uses: actions/checkout@v4
       with:
@@ -50,16 +72,3 @@ runs:
         token: ${{ inputs.gitToken }}
         path: app
 
-    - name: git options
-      shell: bash
-      run: |
-        set -euo pipefail
-
-        pushd app
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git config --global user.name "github-actions[bot]"
-        popd
-
-        pushd devops
-        chmod +x scripts/*
-        popd
