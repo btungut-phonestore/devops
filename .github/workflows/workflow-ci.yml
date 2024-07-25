@@ -80,6 +80,7 @@ jobs:
       docker-password: ${{ secrets.docker-password }}
 
   helm_upgrade:
+    needs: build_and_push
     runs-on: ${{ inputs.runs-on }}
     steps: 
       - uses: btungut-phonestore/devops/.github/actions/common@master
