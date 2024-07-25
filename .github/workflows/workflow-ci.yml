@@ -6,6 +6,11 @@ on:
         type: string
         description: 'Runs on'
 
+      gitops-helm-chart-path:
+        required: true
+        type: string
+        description: 'Gitops helm chart path'
+
       build-docker-context-path:
         required: true
         type: string
@@ -97,9 +102,10 @@ jobs:
         run: |
           set -euo pipefail
           
-          APP_NAME="${{ github.repository }}"
-          [ -d "${APP_NAME}" ] || { echo "Directory ${APP_NAME} does not exist"; exit 1; }
-          pushd "${APP_NAME}"
+          CHART_DIR="${{ inputs.gitops-helm-chart-path }}"
+          [ -d "${CHART_DIR}" ] || { echo "Directory ${CHART_DIR} does not exist"; exit 1; }
+          pushd "${CHART_DIR}"
+          tree .
 
           [ -f "values.yaml" ] || { echo "File values.yaml does not exist in $PWD"; exit 1; }
           [ -f "Chart.yaml" ] || { echo "File Chart.yaml does not exist in $PWD"; exit 1; }
