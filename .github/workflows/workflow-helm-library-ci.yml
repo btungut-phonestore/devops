@@ -50,7 +50,7 @@ jobs:
       GIT_COMMIT_MSG: ${{ steps.git-variables.outputs.GIT_COMMIT_MSG }}
       GIT_COMITTER: ${{ steps.git-variables.outputs.GIT_COMITTER }}
       GIT_COMMIT_DATE: ${{ steps.git-variables.outputs.GIT_COMMIT_DATE }}
-      NEW_CHART_VERSION_BETA: ${{ steps.version-step.outputs.NEW_CHART_VERSION_BETA }}
+      NEW_CHART_VERSION_BETA: ${{ steps.chart-step.outputs.NEW_CHART_VERSION_BETA }}
     steps:
       - uses: btungut-phonestore/devops/.github/actions/common@master
         id: common-vars
@@ -61,7 +61,7 @@ jobs:
 
       - name: prepare versions
         shell: bash
-        id: version-step
+        id: chart-step
         run: |
           set -euo pipefail
 
@@ -136,7 +136,7 @@ jobs:
           pushd ${{ inputs.library-chart-path }}
           echo "PWD : $(pwd)"
 
-          ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".version" "${{ steps.version-step.outputs.NEW_CHART_VERSION_BETA }}" "${{ steps.version-step.outputs.NEW_CHART_VERSION_STABLE }}"
+          ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".version" "${{ steps.chart-step.outputs.NEW_CHART_VERSION_BETA }}" "${{ steps.chart-step.outputs.NEW_CHART_VERSION_STABLE }}"
           ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".appVersion" "${{ steps.git-variables.outputs.GIT_COMMIT_ID }}"
           ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".description" "${{ steps.git-variables.outputs.GIT_COMMIT_MSG }} (${{ steps.git-variables.outputs.GIT_COMITTER }} - ${{ steps.git-variables.outputs.GIT_COMMIT_DATE }})"
 
@@ -161,7 +161,42 @@ jobs:
           echo "Helm template is succeeded."
         working-directory: app
 
+      - name: package chart
+        shell: bash
+        run: |
+          set -euo pipefail
 
+          pushd ${{ inputs.library-chart-path }}
+          echo "PWD : $(pwd)"
+
+          helm package . -d ${{ github.workspace }}
+          echo "Helm package is succeeded."
+        working-directory: app
+
+      - name: generate build yaml
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          touch build.yaml
+          yq -i '.chart.name="${{ steps.chart-step.outputs.CHART_NAME }}"' build.yaml
+          yq -i '.versions.beta="${{ steps.chart-step.outputs.NEW_CHART_VERSION_BETA }}"' build.yaml
+          yq -i '.versions.stable="${{ steps.chart-step.outputs.NEW_CHART_VERSION_STABLE }}"' build.yaml
+          yq -i '.git.commit="${{ steps.git-variables.outputs.GIT_COMMIT_ID }}"' build.yaml
+          yq -i '.git.message="${{ steps.git-variables.outputs.GIT_COMMIT_MSG }}"' build.yaml
+          yq -i '.git.committer="${{ steps.git-variables.outputs.GIT_COMITTER }}"' build.yaml
+          yq -i '.git.date="${{ steps.git-variables.outputs.GIT_COMMIT_DATE }}"' build.yaml
+          yq -i '.git.actor="${{ github.actor }}"' build.yaml
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chart
+          path: ${{ github.workspace }}/*.tgz
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: ${{ github.workspace }}/build.yaml
 
       # - name: docker build init
       #   uses: docker/setup-buildx-action@v3
