@@ -40,7 +40,6 @@ runs:
       run: |
         set -euo pipefail
         rm -rf $GITHUB_WORKSPACE/*
-        exit 1
 
 
     - name: Generate and publish common vars
