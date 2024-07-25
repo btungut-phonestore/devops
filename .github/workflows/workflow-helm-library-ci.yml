@@ -111,7 +111,7 @@ jobs:
           echo "GIT_COMMIT_ID=$GIT_COMMIT_ID" >> $GITHUB_OUTPUT
           echo "GIT_COMMIT_ID=$GIT_COMMIT_ID" 
 
-          GIT_COMMIT_MSG=`git log -n 1 --format="%s (%h)" -- $DIR_CHART $DIR_TEST`
+          GIT_COMMIT_MSG=`git log -n 1 --format="%s" -- $DIR_CHART $DIR_TEST`
           echo "GIT_COMMIT_MSG=$GIT_COMMIT_MSG" >> $GITHUB_ENV
           echo "GIT_COMMIT_MSG=$GIT_COMMIT_MSG" >> $GITHUB_OUTPUT
           echo "GIT_COMMIT_MSG=$GIT_COMMIT_MSG"
