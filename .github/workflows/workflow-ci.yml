@@ -98,7 +98,7 @@ jobs:
           set -euo pipefail
           
           APP_NAME="${{ github.repository }}"
-          [ -d "${APP_NAME}"] || { echo "Directory ${APP_NAME} does not exist"; exit 1; }
+          [ -d "${APP_NAME}" ] || { echo "Directory ${APP_NAME} does not exist"; exit 1; }
           pushd "${APP_NAME}"
 
           [ -f "values.yaml" ] || { echo "File values.yaml does not exist in $PWD"; exit 1; }
