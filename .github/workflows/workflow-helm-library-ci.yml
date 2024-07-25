@@ -191,12 +191,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: chart
-          path: ${{ github.workspace }}/*.tgz
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: build
-          path: ${{ github.workspace }}/build.yaml
+          path: |
+            ${{ github.workspace }}/*.tgz
+            ${{ github.workspace }}/build.yaml
 
       # - name: docker build init
       #   uses: docker/setup-buildx-action@v3
