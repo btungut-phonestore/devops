@@ -32,23 +32,25 @@ on:
 
     outputs:
       GIT_COMMIT_ID:
-        value: ${{ jobs.build_and_push.outputs.GIT_COMMIT_ID }}
+        value: ${{ jobs.helm_pkg_push.outputs.GIT_COMMIT_ID }}
       GIT_COMMIT_MSG:
-        value: ${{ jobs.build_and_push.outputs.GIT_COMMIT_MSG }}
+        value: ${{ jobs.helm_pkg_push.outputs.GIT_COMMIT_MSG }}
       GIT_COMITTER:
-        value: ${{ jobs.build_and_push.outputs.GIT_COMITTER }}
+        value: ${{ jobs.helm_pkg_push.outputs.GIT_COMITTER }}
       GIT_COMMIT_DATE:
-        value: ${{ jobs.build_and_push.outputs.GIT_COMMIT_DATE }}
+        value: ${{ jobs.helm_pkg_push.outputs.GIT_COMMIT_DATE }}
+      NEW_CHART_VERSION_BETA:
+        value: ${{ jobs.helm_pkg_push.outputs.NEW_CHART_VERSION_BETA }}
       
-
 jobs:
-  build_and_push:
+  helm_pkg_push:
     runs-on: ${{ inputs.runs-on }}
     outputs:
       GIT_COMMIT_ID: ${{ steps.git-variables.outputs.GIT_COMMIT_ID }}
       GIT_COMMIT_MSG: ${{ steps.git-variables.outputs.GIT_COMMIT_MSG }}
       GIT_COMITTER: ${{ steps.git-variables.outputs.GIT_COMITTER }}
       GIT_COMMIT_DATE: ${{ steps.git-variables.outputs.GIT_COMMIT_DATE }}
+      NEW_CHART_VERSION_BETA: ${{ steps.version-step.outputs.NEW_CHART_VERSION_BETA }}
     steps:
       - uses: btungut-phonestore/devops/.github/actions/common@master
         id: common-vars
@@ -82,17 +84,14 @@ jobs:
           echo "NEW_CHART_VERSION_STABLE=$NEW_CHART_VERSION_STABLE" >> $GITHUB_OUTPUT
           echo "NEW_CHART_VERSION_STABLE=$NEW_CHART_VERSION_STABLE"
 
-          NEW_CHART_VERSION_BETA="${CURRENT_CHART_VERSION}-r${{ steps.common-vars.outputs.rev-unique }}"
+          NEW_CHART_VERSION_BETA="${CURRENT_CHART_VERSION}-${{ steps.common-vars.outputs.rev-name }}"
           echo "NEW_CHART_VERSION_BETA=$NEW_CHART_VERSION_BETA" >> $GITHUB_ENV
           echo "NEW_CHART_VERSION_BETA=$NEW_CHART_VERSION_BETA" >> $GITHUB_OUTPUT
           echo "NEW_CHART_VERSION_BETA=$NEW_CHART_VERSION_BETA"
 
         working-directory: app
 
-      - uses: btungut-phonestore/devops/.github/actions/set-run-name@master
-        with:
-          ghToken: ${{ secrets.GITHUB_TOKEN }}
-          new-name: "${{ steps.version-step.outputs.NEW_CHART_VERSION_BETA }}"
+
 
 
       - name: git variables of app

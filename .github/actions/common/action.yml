@@ -8,6 +8,9 @@ outputs:
   rev-unique:
     description: "Revision unique"
     value: ${{ steps.common-vars.outputs.rev-unique }}
+  rev-name:
+    description: "Revision name"
+    value: ${{ steps.common-vars.outputs.rev-name }}
 
 runs:
   using: "composite"
@@ -44,10 +47,15 @@ runs:
 
         RUN_NUMBER=${{ github.run_number }}
         RUN_ATTEMPT=${{ github.run_attempt }}
-        REV_UNIQUE=$((RUN_NUMBER * 100 + RUN_ATTEMPT))
 
+        REV_UNIQUE=$((RUN_NUMBER * 100 + RUN_ATTEMPT))
         echo "rev-unique=$REV_UNIQUE" >> $GITHUB_OUTPUT
         echo "rev-unique=$REV_UNIQUE"
+
+        REV_NAME="${RUN_NUMBER}-r${RUN_ATTEMPT}"
+        echo "rev-name=$REV_NAME" >> $GITHUB_OUTPUT
+        echo "rev-name=$REV_NAME"
+
 
     # - name: Generate and publish common vars
     #   id: common-vars
