@@ -42,8 +42,25 @@ runs:
         echo "rev-date=$REV_DATE" >> $GITHUB_OUTPUT
         echo "rev-date=$REV_DATE"
 
-        RUN_NUMBER=$(printf '%02d\n' "${{ github.run_number }}")
-        RUN_ATTEMPT=$(printf '%02d\n' "${{ github.run_attempt }}")
-        REV_UNIQUE="$RUN_NUMBER-r$RUN_ATTEMPT"
+        RUN_NUMBER=${{ github.run_number }}
+        RUN_ATTEMPT=${{ github.run_attempt }}
+        REV_UNIQUE=$((RUN_NUMBER * 100 + RUN_ATTEMPT))
+
         echo "rev-unique=$REV_UNIQUE" >> $GITHUB_OUTPUT
         echo "rev-unique=$REV_UNIQUE"
+
+    # - name: Generate and publish common vars
+    #   id: common-vars
+    #   shell: bash
+    #   run: |
+    #     set -euo pipefail
+
+    #     REV_DATE=$(date +'%Y%m%d-%H%M%S')
+    #     echo "rev-date=$REV_DATE" >> $GITHUB_OUTPUT
+    #     echo "rev-date=$REV_DATE"
+
+    #     RUN_NUMBER=$(printf '%02d\n' "${{ github.run_number }}")
+    #     RUN_ATTEMPT=$(printf '%02d\n' "${{ github.run_attempt }}")
+    #     REV_UNIQUE="$RUN_NUMBER-r$RUN_ATTEMPT"
+    #     echo "rev-unique=$REV_UNIQUE" >> $GITHUB_OUTPUT
+    #     echo "rev-unique=$REV_UNIQUE"

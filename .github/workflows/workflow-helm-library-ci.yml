@@ -39,10 +39,6 @@ on:
         value: ${{ jobs.build_and_push.outputs.GIT_COMITTER }}
       GIT_COMMIT_DATE:
         value: ${{ jobs.build_and_push.outputs.GIT_COMMIT_DATE }}
-      REV_DATE:
-        value: ${{ jobs.build_and_push.outputs.REV_DATE }}
-      REV_UNIQUE:
-        value: ${{ jobs.build_and_push.outputs.REV_UNIQUE }}
       
 
 jobs:
@@ -53,8 +49,6 @@ jobs:
       GIT_COMMIT_MSG: ${{ steps.git-variables.outputs.GIT_COMMIT_MSG }}
       GIT_COMITTER: ${{ steps.git-variables.outputs.GIT_COMITTER }}
       GIT_COMMIT_DATE: ${{ steps.git-variables.outputs.GIT_COMMIT_DATE }}
-      REV_DATE: ${{ steps.common-vars.outputs.rev-date }}
-      REV_UNIQUE: ${{ steps.common-vars.outputs.rev-unique }}
     steps:
       - uses: btungut-phonestore/devops/.github/actions/common@master
         id: common-vars
@@ -88,7 +82,7 @@ jobs:
           echo "NEW_CHART_VERSION_STABLE=$NEW_CHART_VERSION_STABLE" >> $GITHUB_OUTPUT
           echo "NEW_CHART_VERSION_STABLE=$NEW_CHART_VERSION_STABLE"
 
-          NEW_CHART_VERSION_BETA="${CURRENT_CHART_VERSION}-r$(Revision)"
+          NEW_CHART_VERSION_BETA="${CURRENT_CHART_VERSION}-r${{ steps.common-vars.outputs.rev-unique }}"
           echo "NEW_CHART_VERSION_BETA=$NEW_CHART_VERSION_BETA" >> $GITHUB_ENV
           echo "NEW_CHART_VERSION_BETA=$NEW_CHART_VERSION_BETA" >> $GITHUB_OUTPUT
           echo "NEW_CHART_VERSION_BETA=$NEW_CHART_VERSION_BETA"
