@@ -30,6 +30,7 @@ runs:
         token: ${{ inputs.gitToken }}
         persist-credentials: true
         clean: true
+        path: gitops
 
     - name: checkout devops
       uses: actions/checkout@v4
