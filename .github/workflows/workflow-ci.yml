@@ -50,6 +50,9 @@ on:
       docker-password:
         required: true
         description: 'Docker password for login to docker registry'
+      gh-token:
+        required: true
+        description: 'Github token for gitops'
 
     outputs:
       GIT_COMMIT_ID:
@@ -83,6 +86,7 @@ jobs:
     secrets:
       docker-username: ${{ secrets.docker-username }}
       docker-password: ${{ secrets.docker-password }}
+      gh-token: ${{ secrets.gh-token }}
 
   helm_upgrade:
     needs: build_and_push
@@ -99,7 +103,7 @@ jobs:
 
       - uses: btungut-phonestore/devops/.github/actions/git-checkout@master
         with:
-          gitToken: ${{ secrets.GITHUB_TOKEN }}
+          gitToken: ${{ secrets.gh-token }}
           checkoutGitOps: true
           gitOpsBranch: 'dev'
 
