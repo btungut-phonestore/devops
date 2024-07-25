@@ -31,11 +31,10 @@ on:
         type: string
         description: 'Docker repository name'
 
-      docker-tag-prefix:
-        required: false
-        default: ''
+      docker-tag:
+        required: true
         type: string
-        description: 'Docker tag prefix'
+        description: 'Docker tag'
 
       docker-build-only:
         required: false
@@ -81,7 +80,7 @@ jobs:
       build-docker-file-path: ${{ inputs.build-docker-file-path }}
       docker-server: ${{ inputs.docker-server }}
       docker-repository: ${{ inputs.docker-repository }}
-      docker-tag-prefix: ${{ inputs.docker-tag-prefix }}
+      docker-tag: ${{ inputs.docker-tag }}
       docker-build-only: ${{ inputs.docker-build-only }}
     secrets:
       docker-username: ${{ secrets.docker-username }}

@@ -26,11 +26,10 @@ on:
         type: string
         description: 'Docker repository name'
 
-      docker-tag-prefix:
-        required: false
-        default: ''
+      docker-tag:
+        required: true
         type: string
-        description: 'Docker tag prefix'
+        description: 'Docker tag'
 
       docker-build-only:
         required: false
@@ -124,10 +123,7 @@ jobs:
           echo "GIT_COMMIT_DATE=$GIT_COMMIT_DATE" >> $GITHUB_OUTPUT
           echo "GIT_COMMIT_DATE=$GIT_COMMIT_DATE"
 
-          DOCKER_TAG="${GIT_COMMIT_ID}-${{ steps.common-vars.outputs.rev-unique }}"
-          if [[ -n "${{ inputs.docker-tag-prefix }}" ]]; then
-            DOCKER_TAG="${{ inputs.docker-tag-prefix }}-${DOCKER_TAG}"
-          fi
+          DOCKER_TAG="${{ inputs.docker-tag }}"
           echo "DOCKER_TAG=$DOCKER_TAG" >> $GITHUB_ENV
           echo "DOCKER_TAG=$DOCKER_TAG" >> $GITHUB_OUTPUT
           echo "DOCKER_TAG=$DOCKER_TAG"
@@ -149,24 +145,24 @@ jobs:
           username: ${{ secrets.docker-username }}
           password: ${{ secrets.docker-password }}
 
-      # - name: docker build & push
-      #   uses: docker/build-push-action@v5 
-      #   id: docker-build
-      #   with:
-      #     context: app/${{ inputs.build-docker-context-path }}
-      #     file: app/${{ inputs.build-docker-file-path }}
-      #     push: ${{ !inputs.docker-build-only }}
-      #     labels: |
-      #       GIT_COMMIT_ID=${{ steps.git-variables.outputs.GIT_COMMIT_ID }}
-      #       GIT_COMMIT_MSG=${{ steps.git-variables.outputs.GIT_COMMIT_MSG }}
-      #       GIT_COMITTER=${{ steps.git-variables.outputs.GIT_COMITTER }}
-      #       GIT_COMMIT_DATE=${{ steps.git-variables.outputs.GIT_COMMIT_DATE }}
-      #       GITHUB_ACTOR=${{ github.actor }}
-      #       GITHUB_REPOSITORY=${{ github.repository }}
-      #       GITHUB_SHA=${{ github.sha }}
-      #       GITHUB_REF=${{ github.ref }}
-      #       GITHUB_RUN_ID=${{ github.run_id }}
-      #       GITHUB_RUN_NUMBER=${{ github.run_number }}
-      #     tags: |
-      #       ${{ steps.git-variables.outputs.DOCKER_REPO }}:${{ steps.git-variables.outputs.DOCKER_TAG }}
+      - name: docker build & push
+        uses: docker/build-push-action@v5 
+        id: docker-build
+        with:
+          context: app/${{ inputs.build-docker-context-path }}
+          file: app/${{ inputs.build-docker-file-path }}
+          push: ${{ !inputs.docker-build-only }}
+          labels: |
+            GIT_COMMIT_ID=${{ steps.git-variables.outputs.GIT_COMMIT_ID }}
+            GIT_COMMIT_MSG=${{ steps.git-variables.outputs.GIT_COMMIT_MSG }}
+            GIT_COMITTER=${{ steps.git-variables.outputs.GIT_COMITTER }}
+            GIT_COMMIT_DATE=${{ steps.git-variables.outputs.GIT_COMMIT_DATE }}
+            GITHUB_ACTOR=${{ github.actor }}
+            GITHUB_REPOSITORY=${{ github.repository }}
+            GITHUB_SHA=${{ github.sha }}
+            GITHUB_REF=${{ github.ref }}
+            GITHUB_RUN_ID=${{ github.run_id }}
+            GITHUB_RUN_NUMBER=${{ github.run_number }}
+          tags: |
+            ${{ steps.git-variables.outputs.DOCKER_REPO }}:${{ steps.git-variables.outputs.DOCKER_TAG }}
 
