@@ -137,8 +137,8 @@ jobs:
           echo "PWD : $(pwd)"
 
           ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".version" "${{ steps.chart-step.outputs.NEW_CHART_VERSION_BETA }}" "${{ steps.chart-step.outputs.NEW_CHART_VERSION_STABLE }}"
-          ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".appVersion" "${{ steps.git-variables.outputs.GIT_COMMIT_ID }}"
-          ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".description" "${{ steps.git-variables.outputs.GIT_COMMIT_MSG }} (${{ steps.git-variables.outputs.GIT_COMITTER }} - ${{ steps.git-variables.outputs.GIT_COMMIT_DATE }})"
+          ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".appVersion" "\"${{ steps.git-variables.outputs.GIT_COMMIT_ID }}\""
+          ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".description" "\"${{ steps.git-variables.outputs.GIT_COMMIT_MSG }} (${{ steps.git-variables.outputs.GIT_COMITTER }} - ${{ steps.git-variables.outputs.GIT_COMMIT_DATE }})\""
 
           echo "Chart.yaml is updated."
           echo "---------------------------------"
