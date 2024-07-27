@@ -134,10 +134,10 @@ jobs:
           NEW_CHART_VERSION="${ARR[0]}.${ARR[1]}.${ARR[2]%%-*}-${{ steps.common-vars.outputs.rev-name }}"
           echo "NEW_CHART_VERSION=$NEW_CHART_VERSION" >> $GITHUB_ENV
           ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".version" "${NEW_CHART_VERSION}" "${{ env.GIT_COMMIT_ID }}"
-          ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".appVersion" "${{ env.GIT_COMMIT_ID }}"
-          ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".description" "${{ env.GIT_COMMIT_MSG }} (${{ env.GIT_COMITTER }} at ${{ env.GIT_COMMIT_DATE }})"
-          ${{ github.workspace }}/devops/scripts/modify-yaml.sh values.yaml ".deployment.image.repository" "${{ env.DOCKER_REPO }}"
-          ${{ github.workspace }}/devops/scripts/modify-yaml.sh values.yaml ".deployment.image.tag" "${{ env.DOCKER_TAG }}"
+          ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".appVersion" "\"${{ env.GIT_COMMIT_ID }}\""
+          ${{ github.workspace }}/devops/scripts/modify-yaml.sh Chart.yaml ".description" "\"${{ env.GIT_COMMIT_MSG }} (${{ env.GIT_COMITTER }} at ${{ env.GIT_COMMIT_DATE }})\""
+          ${{ github.workspace }}/devops/scripts/modify-yaml.sh values.yaml ".deployment.image.repository" "\"${{ env.DOCKER_REPO }}\""
+          ${{ github.workspace }}/devops/scripts/modify-yaml.sh values.yaml ".deployment.image.tag" "\"${{ env.DOCKER_TAG }}\""
 
         working-directory: gitops
 
