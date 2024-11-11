@@ -31,6 +31,11 @@ on:
         type: string
         description: 'Docker repository name'
 
+      docker-tag:
+        required: true
+        type: string
+        description: 'Docker tag'
+
       docker-build-only:
         required: false
         default: false
@@ -67,67 +72,6 @@ on:
         value: ${{ jobs.build_and_push.outputs.REV_UNIQUE }}
 
 jobs:
-  init:
-    runs-on: ${{ inputs.runs-on }}
-    outputs:
-      BRANCH_TYPE: ${{ steps.override_vars.outputs.BRANCH_TYPE }}
-      BRANCH_NAME: ${{ steps.override_vars.outputs.BRANCH_NAME }}
-      DOCKER_TAG: ${{ steps.override_vars.outputs.DOCKER_TAG }}
-    steps:
-      - uses: btungut-phonestore/devops/.github/actions/common@master
-        id: common-vars
-
-      - name: override_vars
-        id: override_vars
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          BRANCH_TYPE="master"
-          REF_NAME="${{ github.ref_name }}"
-
-
-          ### Populate BRANCH_TYPE
-          if [[ $REF_NAME =~ feature ]]; then
-            BRANCH_TYPE="feature"
-          elif [[ $REF_NAME =~ release ]]; then
-            echo "Flow for release branch is not implemented yet"
-            exit 1
-          elif [[ $REF_NAME =~ hotfix ]]; then
-            echo "Flow for hotfix branch is not implemented yet"
-            exit 1
-          fi
-          echo "BRANCH_TYPE=$BRANCH_TYPE" >> $GITHUB_ENV
-          echo "BRANCH_TYPE=$BRANCH_TYPE" >> $GITHUB_OUTPUT
-          echo "BRANCH_TYPE=$BRANCH_TYPE"
-
-
-
-          ### Populate BRANCH_NAME
-          BRANCH_NAME="$REF_NAME"
-          BRANCH_NAME="${BRANCH_NAME//\//-}"
-          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
-          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_OUTPUT
-          echo "BRANCH_NAME=$BRANCH_NAME"
-
-
-
-          ### Populate DOCKER_TAG
-          DOCKER_TAG="${{ steps.common-vars.outputs.rev-name }}"
-          [ -z "${DOCKER_TAG}" ] && { echo "DOCKER_TAG is not set"; exit 1; }
-
-
-          ### Append BRAHCH_NAME to DOCKER_TAG for the branches other than master
-          if [[ $BRANCH_TYPE != "master" ]]; then
-            DOCKER_TAG="${BRANCH_NAME}-${DOCKER_TAG}"
-          fi
-          echo "DOCKER_TAG=$DOCKER_TAG" >> $GITHUB_ENV
-          echo "DOCKER_TAG=$DOCKER_TAG" >> $GITHUB_OUTPUT
-          echo "DOCKER_TAG=$DOCKER_TAG"
-
-          
-          
-
   build_and_push:
     uses: btungut-phonestore/devops/.github/workflows/workflow-docker-build-push.yml@master
     with:
@@ -136,20 +80,15 @@ jobs:
       build-docker-file-path: ${{ inputs.build-docker-file-path }}
       docker-server: ${{ inputs.docker-server }}
       docker-repository: ${{ inputs.docker-repository }}
-      docker-tag: ${{ needs.init.outputs.DOCKER_TAG }}
+      docker-tag: ${{ inputs.docker-tag }}
       docker-build-only: ${{ inputs.docker-build-only }}
     secrets:
       docker-username: ${{ secrets.docker-username }}
       docker-password: ${{ secrets.docker-password }}
       gh-token: ${{ secrets.gh-token }}
 
-
-      
   helm_upgrade:
-    needs:
-      - init
-      - build_and_push
-    if: ${{ needs.init.outputs.BRANCH_TYPE == 'master' }} 
+    needs: build_and_push
     runs-on: ${{ inputs.runs-on }}
     env:
       DOCKER_REPO: ${{ needs.build_and_push.outputs.DOCKER_REPO }}
