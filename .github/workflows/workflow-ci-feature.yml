@@ -75,7 +75,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          REF_NAME="${{ github.ref }}"
+          REF_NAME="${{ github.ref_name }}"
 
           if [[ ! $REF_NAME =~ feature ]]; then
             echo "This is not a feature branch"
