@@ -1,0 +1,106 @@
+on:
+  workflow_call: 
+    inputs:
+      
+      runs-on:
+        type: string
+        description: 'Runs on'
+
+      build-docker-context-path:
+        required: true
+        type: string
+        description: 'Docker context path'
+
+      build-docker-file-path:
+        required: true
+        type: string
+        description: 'Dockerfile path'
+
+      docker-server:
+        required: true
+        type: string
+        description: 'Docker registry server'
+
+      docker-repository:
+        required: true
+        type: string
+        description: 'Docker repository name'
+
+      docker-tag:
+        required: true
+        type: string
+        description: 'Docker tag'
+
+      docker-build-only:
+        required: false
+        default: false
+        type: boolean
+        description: 'Docker build only'
+
+    secrets:
+      docker-username:
+        required: true
+        description: 'Docker username for login to docker registry'
+      docker-password:
+        required: true
+        description: 'Docker password for login to docker registry'
+      gh-token:
+        required: true
+        description: 'Github token for gitops'
+
+    outputs:
+      GIT_COMMIT_ID:
+        value: ${{ jobs.build_and_push.outputs.GIT_COMMIT_ID }}
+      GIT_COMMIT_MSG:
+        value: ${{ jobs.build_and_push.outputs.GIT_COMMIT_MSG }}
+      GIT_COMITTER:
+        value: ${{ jobs.build_and_push.outputs.GIT_COMITTER }}
+      GIT_COMMIT_DATE:
+        value: ${{ jobs.build_and_push.outputs.GIT_COMMIT_DATE }}
+      DOCKER_REPO:
+        value: ${{ jobs.build_and_push.outputs.DOCKER_REPO }}
+      DOCKER_TAG:
+        value: ${{ jobs.build_and_push.outputs.DOCKER_TAG }}
+      REV_DATE:
+        value: ${{ jobs.build_and_push.outputs.REV_DATE }}
+      REV_UNIQUE:
+        value: ${{ jobs.build_and_push.outputs.REV_UNIQUE }}
+
+jobs:
+  init:
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - name: override_vars
+        id: override_vars
+        shell: bash
+        run: |
+          set -euo pipefail
+          REF_NAME="${{ github.ref }}"
+
+          if [[ ! $REF_NAME =~ feature ]]; then
+            echo "This is not a feature branch"
+            exit 0
+          fi
+
+          # Replace / with -
+          BRANCH_NAME="${REF_NAME//\//-}"
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "BRANCH_NAME=$BRANCH_NAME"
+          
+
+  build_and_push:
+    needs: init
+    uses: btungut-phonestore/devops/.github/workflows/workflow-docker-build-push.yml@master
+    with:
+      runs-on: ${{ inputs.runs-on }}
+      build-docker-context-path: ${{ inputs.build-docker-context-path }}
+      build-docker-file-path: ${{ inputs.build-docker-file-path }}
+      docker-server: ${{ inputs.docker-server }}
+      docker-repository: ${{ inputs.docker-repository }}
+      docker-tag: ${{ needs.init.outputs.BRANCH_NAME }}-${{ inputs.docker-tag }}
+      docker-build-only: true
+    secrets:
+      docker-username: ${{ secrets.docker-username }}
+      docker-password: ${{ secrets.docker-password }}
+      gh-token: ${{ secrets.gh-token }}
