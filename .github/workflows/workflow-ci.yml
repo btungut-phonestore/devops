@@ -129,6 +129,7 @@ jobs:
           
 
   build_and_push:
+    needs: init
     uses: btungut-phonestore/devops/.github/workflows/workflow-docker-build-push.yml@master
     with:
       runs-on: ${{ inputs.runs-on }}
@@ -144,7 +145,7 @@ jobs:
       gh-token: ${{ secrets.gh-token }}
 
 
-      
+
   helm_upgrade:
     needs:
       - init
