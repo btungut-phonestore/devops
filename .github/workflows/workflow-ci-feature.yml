@@ -26,11 +26,6 @@ on:
         type: string
         description: 'Docker repository name'
 
-      docker-tag:
-        required: true
-        type: string
-        description: 'Docker tag'
-
       docker-build-only:
         required: false
         default: false
@@ -98,7 +93,7 @@ jobs:
       build-docker-file-path: ${{ inputs.build-docker-file-path }}
       docker-server: ${{ inputs.docker-server }}
       docker-repository: ${{ inputs.docker-repository }}
-      docker-tag: ${{ needs.init.outputs.BRANCH_NAME }}-${{ inputs.docker-tag }}
+      docker-tag: ${{ needs.init.outputs.BRANCH_NAME }}-v${{ github.run_number }}-r${{ github.run_attempt }}
       docker-build-only: true
     secrets:
       docker-username: ${{ secrets.docker-username }}
