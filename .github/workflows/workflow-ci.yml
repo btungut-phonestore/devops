@@ -90,6 +90,7 @@ jobs:
   helm_upgrade:
     needs: build_and_push
     runs-on: ${{ inputs.runs-on }}
+    if: github.ref_type == 'branch' && !contains(github.ref, 'feature')
     env:
       DOCKER_REPO: ${{ needs.build_and_push.outputs.DOCKER_REPO }}
       DOCKER_TAG: ${{ needs.build_and_push.outputs.DOCKER_TAG }}
