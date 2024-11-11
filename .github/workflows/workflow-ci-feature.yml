@@ -64,6 +64,8 @@ on:
 jobs:
   init:
     runs-on: ${{ inputs.runs-on }}
+    outputs:
+      BRANCH_NAME: ${{ steps.override_vars.outputs.BRANCH_NAME }}
     steps:
       - name: override_vars
         id: override_vars
