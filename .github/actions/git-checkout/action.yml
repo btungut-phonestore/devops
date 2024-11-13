@@ -22,61 +22,67 @@ runs:
   using: "composite"
   steps:
 
-  - name: checkout gitops
-    if: ${{ inputs.checkoutGitOps == 'true' }}
-    uses: actions/checkout@v4
-    with:
-      fetch-depth: 100
-      repository: ${{ github.repository_owner }}/gitops
-      ref: ${{ inputs.gitOpsBranch }}
-      token: ${{ inputs.gitToken }}
-      persist-credentials: true
-      clean: true
-      path: gitops
+    - name: cleanup workspace
+      shell: bash
+      run: |
+        set -euo pipefail
+        rm -rf $GITHUB_WORKSPACE/*
 
-  - name: checkout devops
-    uses: actions/checkout@v4
-    with:
-      fetch-depth: 100
-      repository: ${{ github.repository_owner }}/devops
-      ref: master
-      token: ${{ inputs.gitToken }}
-      clean: true
-      path: devops
+    - name: checkout gitops
+      if: ${{ inputs.checkoutGitOps == 'true' }}
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 100
+        repository: ${{ github.repository_owner }}/gitops
+        ref: ${{ inputs.gitOpsBranch }}
+        token: ${{ inputs.gitToken }}
+        persist-credentials: true
+        clean: true
+        path: gitops
 
-  - name: checkout app
-    uses: actions/checkout@v4
-    with:
-      fetch-depth: 100
-      clean: true
-      token: ${{ inputs.gitToken }}
-      path: app
-      persist-credentials: ${{ inputs.persistCredentialsForAppRepo }}
+    - name: checkout devops
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 100
+        repository: ${{ github.repository_owner }}/devops
+        ref: master
+        token: ${{ inputs.gitToken }}
+        clean: true
+        path: devops
 
-  - name: git options
-    shell: bash
-    run: |
-      set -euo pipefail
+    - name: checkout app
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 100
+        clean: true
+        token: ${{ inputs.gitToken }}
+        path: app
+        persist-credentials: ${{ inputs.persistCredentialsForAppRepo }}
 
-      pushd devops
-      chmod +x scripts/*
-      popd
+    - name: git options
+      shell: bash
+      run: |
+        set -euo pipefail
 
-      if [ -d "gitops" ]; then
-        pushd gitops
-        git fetch
-        git checkout ${{ inputs.gitOpsBranch }}
-        git pull origin ${{ inputs.gitOpsBranch }}
-        git config --global user.email "${{ inputs.gitOpsBranch }}@gitops.local"
-        git config --global user.name "github-actions[${{ inputs.gitOpsBranch }}]"
+        pushd devops
+        chmod +x scripts/*
         popd
-      fi
 
-      IS_PERS_APP_REPO=$(echo ${{ inputs.persistCredentialsForAppRepo }} | tr '[:upper:]' '[:lower:]')
-      if [ "${IS_PERS_APP_REPO}" == "true" ]; then
-        echo "Persisting credentials for app repository"
-        pushd app
-        git config --global user.email "admin@gitops.local"
-        git config --global user.name "github-actions[app]"
-        popd
-      fi
+        if [ -d "gitops" ]; then
+          pushd gitops
+          git fetch
+          git checkout ${{ inputs.gitOpsBranch }}
+          git pull origin ${{ inputs.gitOpsBranch }}
+          git config --global user.email "${{ inputs.gitOpsBranch }}@gitops.local"
+          git config --global user.name "github-actions[${{ inputs.gitOpsBranch }}]"
+          popd
+        fi
+
+        IS_PERS_APP_REPO=$(echo ${{ inputs.persistCredentialsForAppRepo }} | tr '[:upper:]' '[:lower:]')
+        if [ "${IS_PERS_APP_REPO}" == "true" ]; then
+          echo "Persisting credentials for app repository"
+          pushd app
+          git config --global user.email "admin@gitops.local"
+          git config --global user.name "github-actions[app]"
+          popd
+        fi
