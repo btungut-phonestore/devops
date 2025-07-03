@@ -215,3 +215,23 @@ jobs:
           path: |
             ${{ github.workspace }}/*.tgz
             ${{ github.workspace }}/build.yaml
+
+      # create prerelease
+      - name: create prerelease
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ steps.chart-step.outputs.NEW_CHART_VERSION_BETA }}
+          tag_name: ${{ steps.chart-step.outputs.NEW_CHART_VERSION_BETA }}
+          files: |
+            ${{ github.workspace }}/*.tgz
+            ${{ github.workspace }}/build.yaml
+          draft: false
+          prerelease: true
+          body: |
+            Chart: `${{ steps.chart-step.outputs.CHART_NAME }}`
+            Version: `${{ steps.chart-step.outputs.NEW_CHART_VERSION_BETA }}`
+            Commit: `${{ steps.git-variables.outputs.GIT_COMMIT_ID }}`
+            Message: `${{ steps.git-variables.outputs.GIT_COMMIT_MSG }}`
+            Committer: `${{ steps.git-variables.outputs.GIT_COMITTER }}`
+            Date: `${{ steps.git-variables.outputs.GIT_COMMIT_DATE }}`
+            Stable Version: `${{ steps.chart-step.outputs.NEW_CHART_VERSION_STABLE }}`
